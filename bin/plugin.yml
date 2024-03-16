@@ -1,5 +1,5 @@
 name: TSLight
-main: wtf.TheServer.TSLight.TSLightPlugin
+main: com.mikemik44.light.TsLight
 version: ${project.version}
 api-version: 1.17
 author: TheServer.wtf
@@ -7,7 +7,6 @@ website: 'https://TheServer.wtf/'
 description: A plugin that listens for the time and changes light zones or blocks accordingly
 depend:
   - WorldEdit
-  - TSCentralPlugin
 
 permissions:
   tslight.use:
