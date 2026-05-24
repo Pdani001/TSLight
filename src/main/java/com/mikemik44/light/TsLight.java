@@ -3,6 +3,7 @@ package com.mikemik44.light;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -30,13 +31,18 @@ import com.sk89q.worldedit.regions.Region;
 
 public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 
-	public static String pluginDir = "plugins/TSLight";
-	public static int usedLightZoneIDS = 0;
-	public static ArrayList<LightZone> allLightZones = new ArrayList<>();
+	private static String pluginDir = "plugins/TSLight";
+	private int usedLightZoneIDS = 0;
+	private final ArrayList<LightZone> allLightZones = new ArrayList<>();
 	public static HashMap<UUID, ArrayList<String>> inputData = new HashMap<>();
+
+	public static String getPluginDir() {
+		return pluginDir;
+	}
 
 	@Override
 	public void onEnable() {
+		pluginDir = getDataFolder().getPath();
 		File checkDir = new File(pluginDir);
 		if (!checkDir.isDirectory()) {
 			checkDir.mkdirs();
@@ -45,27 +51,27 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 		getServer().getPluginManager().registerEvents(this, this);
 		getCommand("tslight").setExecutor(new TSLightCommand(this));
 		Bukkit.getScheduler().scheduleAsyncRepeatingTask(this, () -> {
-			if (allLightZones.size() == 0) {
+			if (allLightZones.isEmpty()) {
 				return;
 			}
 			for (int ij = allLightZones.size() - 1; ij >= 0; ij--) {
 				LightZone lz = allLightZones.get(ij);
-				if (lz.getLightBlocks().size() == 0) {
+				if (lz.getLightBlocks().isEmpty()) {
 					allLightZones.remove(lz);
 					File f1 = new File(lz.fileName);
 					try {
 						if (f1.exists()) {
 							f1.delete();
 						}
-					} catch (Exception e) {
+					} catch (Exception ignored) {
 
 					}
 				}
 				World w = getServer().getWorld(lz.getWorldName());
-				if (w.getPlayers().size() != 0) {
+				if (!w.getPlayers().isEmpty()) {
 					int timeOn = lz.timeOn;
 					int timeOff = lz.timeOff;
-					long time = Times.getTime(w);
+					long time = Times.getWorldTime(w);
 					if (timeOn > timeOff) {
 						if (time >= timeOff && time <= timeOn) {
 							for (int k = lz.getLightBlocks().size() - 1; k >= 0; k--) {
@@ -171,13 +177,13 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 			return;
 		}
 		Bukkit.getScheduler().runTask(this, () -> {
-			if (block.getType().equals(Material.LIGHT)) {
-				Levelled levelled = (Levelled) block.getBlockData();
+			if (block.getBlockData() instanceof Levelled levelled) {
+//				Levelled levelled = (Levelled) block.getBlockData();
 				levelled.setLevel(level);
 				block.setBlockData(levelled, false);
-			} else if (block.getBlockData() instanceof Lightable) {
-				Lightable lightable = (Lightable) block.getBlockData();
-				lightable.setLit(level == 0 ? false : true);
+			} else if (block.getBlockData() instanceof Lightable lightable) {
+//				Lightable lightable = (Lightable) block.getBlockData();
+				lightable.setLit(level != 0);
 				block.setBlockData(lightable, false);
 			}
 		});
@@ -189,13 +195,12 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 		super.onDisable();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static void loadLightZones() {
+	public void loadLightZones() {
 		String dirPath = TsLight.pluginDir + "/lightZone/";
 		File f = new File(dirPath);
 		usedLightZoneIDS = 0;
 		if (f.isDirectory()) {
-			for (File file : f.listFiles()) {
+			for (File file : Objects.requireNonNull(f.listFiles())) {
 				String name = file.getName();
 				String fileName = name.replace(".txt", "");
 				String[] fileData = fileName.split("=");
@@ -205,21 +210,21 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 				allLightZones.add(new LightZone(fileData[1].trim(), fileData[0].trim(),
 						Integer.parseInt(fileSep[0].trim()), Integer.parseInt(fileSep[1].trim()),
 						Integer.parseInt(fileSep[2].trim()),
-						(ArrayList<Byte>) new Gson().fromJson(fileSep[3].trim(), new TypeToken<ArrayList<Byte>>() {
-						}.getType()), (ArrayList<Integer[]>) new Gson().fromJson(fileSep[4].trim(),
+                        new Gson().fromJson(fileSep[3].trim(), new TypeToken<ArrayList<Byte>>() {
+                        }.getType()), new Gson().fromJson(fileSep[4].trim(),
 								new TypeToken<ArrayList<Integer[]>>() {
 								}.getType())));
 			}
 		}
 	}
 
+	// TODO: move plugin functionality from the chat to the dedicated command
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onPlayerChat(AsyncPlayerChatEvent event) {
 
 		if (inputData.containsKey(event.getPlayer().getUniqueId())) {
 			event.setCancelled(true); // Prevents the message from being seen
 			String msg = event.getMessage();
-			java.util.logging.Logger l = Bukkit.getLogger();
 			for (int i = 0; i < 9; i++) {
 				msg = msg.replace("§" + i, "");
 			}
@@ -230,7 +235,7 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 			msg = msg.replace("§e", "");
 			msg = msg.replace("§f", "");
 			msg = msg.replace("§r", "");
-			l.info(msg);
+			getLogger().info(msg);
 
 			String[] sp1 = msg.split(": ");
 			if (sp1.length == 1) {
@@ -379,7 +384,7 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 	}
 
 	private Vector toVector(Vector3 loc) {
-		return new Vector(loc.getX(), loc.getY(), loc.getZ());
+		return new Vector(loc.x(), loc.y(), loc.z());
 	}
 
 	private int findAnswer(String string) {
