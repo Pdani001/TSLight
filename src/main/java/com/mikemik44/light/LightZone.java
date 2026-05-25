@@ -10,9 +10,9 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Lightable;
+import org.bukkit.block.data.type.Light;
 import org.bukkit.util.Vector;
 
-import com.google.gson.Gson;
 import com.mikemik44.light.filemanager.FileHandler;
 
 public class LightZone {
@@ -31,8 +31,8 @@ public class LightZone {
 	}
 
 	public void save() {
-		String textToSave = on + "=" + timeOn + "=" + timeOff + "=" + new Gson().toJson(defLightBlockLevel) + "="
-				+ new Gson().toJson(lightBlockLocations);
+		String textToSave = on + "=" + timeOn + "=" + timeOff + "=" + TsLight.getGson().toJson(defLightBlockLevel) + "="
+				+ TsLight.getGson().toJson(lightBlockLocations);
 		FileHandler.writeToFile(fileName, textToSave);
 	}
 	
@@ -55,16 +55,14 @@ public class LightZone {
 				for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
 					Block sel = w.getBlockAt(x, y, z);
 
-					if (((sel.getBlockData() instanceof Lightable
-									|| sel.getType().isBlock() && sel.getType().equals(Material.LIGHT)))
-							&& !sel.getType().name().toLowerCase().contains("candle")) {
-						if (!(sel.getType().equals(Material.REDSTONE) || sel.getType().equals(Material.REDSTONE_TORCH)
-								|| sel.getType().equals(Material.TORCH))) {
-							Location l1 = sel.getLocation();
-							Integer[] toint = new Integer[] { l1.getBlockX(), l1.getBlockY(), l1.getBlockZ() };
-							lightBlockLocations.add(toint);
-							defLightBlockLevel.add(sel.getLightLevel());
-						}
+					if ((sel.getBlockData() instanceof Lightable
+									|| sel.getBlockData() instanceof Light)
+					&& !(sel.getType().equals(Material.REDSTONE) || sel.getType().equals(Material.REDSTONE_TORCH)
+							|| sel.getType().equals(Material.TORCH) || sel.getType().name().toLowerCase().contains("candle"))) {
+						Location location = sel.getLocation();
+						Integer[] blockPosition = new Integer[] { location.getBlockX(), location.getBlockY(), location.getBlockZ() };
+						lightBlockLocations.add(blockPosition);
+						defLightBlockLevel.add(sel.getLightLevel());
 					}
 				}
 			}
@@ -83,20 +81,16 @@ public class LightZone {
 		this.on = on;
 		World w = Objects.requireNonNull(Bukkit.getServer().getWorld(world), "world not found");
 		
-		for (int k=this.lightBlockLocations.size()-1;k>=0;k--) {
-			Integer[] v = this.lightBlockLocations.get(k);
-			Block sel = w.getBlockAt(v[0], v[1], v[2]);
-			if (!((sel.getBlockData() instanceof Lightable
-							|| sel.getType().isBlock() && sel.getType().equals(Material.LIGHT))
-					&& !sel.getType().name().toLowerCase().contains("candle"))) {
-				int ind = this.lightBlockLocations.indexOf(v);
-				this.lightBlockLocations.remove(ind);
-				this.defLightBlockLevel.remove(ind);
-			} else if ((sel.getType().equals(Material.REDSTONE) || sel.getType().equals(Material.REDSTONE_TORCH)
-					|| sel.getType().equals(Material.TORCH))) {
-				int ind = this.lightBlockLocations.indexOf(v);
-				this.lightBlockLocations.remove(ind);
-				this.defLightBlockLevel.remove(ind);
+		for (int i=this.lightBlockLocations.size()-1;i>=0;i--) {
+			Integer[] pos = this.lightBlockLocations.get(i);
+			Block sel = w.getBlockAt(pos[0], pos[1], pos[2]);
+			if ((!(sel.getBlockData() instanceof Lightable
+							|| sel.getBlockData() instanceof Light))
+			|| (sel.getType().equals(Material.REDSTONE) || sel.getType().equals(Material.REDSTONE_TORCH)
+					|| sel.getType().equals(Material.TORCH) || sel.getType().name().toLowerCase().contains("candle"))) {
+				int lightIndex = this.lightBlockLocations.indexOf(pos);
+				this.lightBlockLocations.remove(lightIndex);
+				this.defLightBlockLevel.remove(lightIndex);
 			}
 		}
 		save();
@@ -106,8 +100,8 @@ public class LightZone {
 		return defLightBlockLevel.get(counter);
 	}
 
-	public void removeLightLevel(int k) {
-		defLightBlockLevel.remove(k);
+	public void removeLightLevel(int index) {
+		defLightBlockLevel.remove(index);
 	}
 
 }

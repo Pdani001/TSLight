@@ -6,11 +6,12 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.google.gson.GsonBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Levelled;
+import org.bukkit.block.data.type.Light;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -35,13 +36,20 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 	private int usedLightZoneIDS = 0;
 	private final ArrayList<LightZone> allLightZones = new ArrayList<>();
 	public static HashMap<UUID, ArrayList<String>> inputData = new HashMap<>();
+	private static Gson gson;
 
 	public static String getPluginDir() {
 		return pluginDir;
 	}
 
+	public static Gson getGson() {
+		return gson;
+	}
+
 	@Override
 	public void onEnable() {
+		GsonBuilder builder = new GsonBuilder();
+		gson = builder.create();
 		pluginDir = getDataFolder().getPath();
 		File checkDir = new File(pluginDir);
 		if (!checkDir.isDirectory()) {
@@ -162,10 +170,9 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 	}
 
 	public boolean validType(Block b) {
-		if (b.getBlockData() instanceof Lightable || b.getType().equals(Material.LIGHT)) {
+		if (b.getBlockData() instanceof Lightable || b.getBlockData() instanceof Light) {
 			if (!(b.getType().equals(Material.REDSTONE) || b.getType().equals(Material.REDSTONE_TORCH)
-					|| b.getType().equals(Material.TORCH) || b.getType().toString().contains("candle")
-					|| b.getType().toString().matches(".*(C|c)(A|a)(N|n)(D|d)(L|l)(E|e).*"))) {
+					|| b.getType().equals(Material.TORCH) || b.getType().name().toLowerCase().contains("candle"))) {
 				return true;
 			}
 		}
@@ -177,12 +184,10 @@ public class TsLight extends JavaPlugin implements org.bukkit.event.Listener {
 			return;
 		}
 		Bukkit.getScheduler().runTask(this, () -> {
-			if (block.getBlockData() instanceof Levelled levelled) {
-//				Levelled levelled = (Levelled) block.getBlockData();
-				levelled.setLevel(level);
-				block.setBlockData(levelled, false);
+			if (block.getBlockData() instanceof Light light) {
+				light.setLevel(level);
+				block.setBlockData(light, false);
 			} else if (block.getBlockData() instanceof Lightable lightable) {
-//				Lightable lightable = (Lightable) block.getBlockData();
 				lightable.setLit(level != 0);
 				block.setBlockData(lightable, false);
 			}

@@ -8,11 +8,11 @@ import java.util.Map;
 
 public enum Times {
 
+	DAWN(23_000L),
 	DAY(0L),
 	DUSK(12_000L),
 	NIGHT(13_000L),
 	MIDNIGHT(17_500L),
-	DAWN(23_000L),
 	;
 	private final long time;
 	Times(long time){
@@ -37,10 +37,11 @@ public enum Times {
 	}
 
 	public static String convertToTimeOfDay(Long time) {
-		Times current = DAY;
-		for(Times times : values())
+		Times current = values()[0];
+		for(Times times : values()) {
+			if(current.getTime() < time) break;
 			if(time >= times.getTime()) current = times;
-			else break;
+		}
 		return current.toString();
 	}
 
