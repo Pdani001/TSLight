@@ -2,6 +2,7 @@ package com.mikemik44.light;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -15,11 +16,11 @@ import com.google.gson.Gson;
 import com.mikemik44.light.filemanager.FileHandler;
 
 public class LightZone {
-	private String world;
-	private ArrayList<Integer[]> lightBlockLocations = new ArrayList<>();
+	private final String world;
+	private final ArrayList<Integer[]> lightBlockLocations;
 	private ArrayList<Byte> defLightBlockLevel = new ArrayList<>();
-	public String fileName;
-	public Integer on, timeOn, timeOff;
+	public final String fileName;
+	public final Integer on, timeOn, timeOff;
 
 	public ArrayList<Integer[]> getLightBlocks() {
 		return lightBlockLocations;
@@ -35,12 +36,12 @@ public class LightZone {
 		FileHandler.writeToFile(fileName, textToSave);
 	}
 	
-	public LightZone(World w, String ident, int on, int onSwitch, int offSwitch, Vector min, Vector max) {
-		File check = new File(TsLight.pluginDir + "/lightZone");
+	public LightZone(World w, String id, int on, int onSwitch, int offSwitch, Vector min, Vector max) {
+		File check = new File(TsLight.getPluginDir() + "/lightZone");
 		if (!check.isDirectory()) {
 			check.mkdirs();
 		}
-		this.fileName = TsLight.pluginDir + "/lightZone/" + w.getName() + "=" + ident + ".txt";
+		this.fileName = TsLight.getPluginDir() + "/lightZone/" + w.getName() + "=" + id + ".txt";
 		this.on = on;
 		this.timeOn = onSwitch;
 		this.timeOff = offSwitch;
@@ -54,11 +55,9 @@ public class LightZone {
 				for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
 					Block sel = w.getBlockAt(x, y, z);
 
-					if ((sel != null
-							&& (sel.getBlockData() instanceof Lightable
+					if (((sel.getBlockData() instanceof Lightable
 									|| sel.getType().isBlock() && sel.getType().equals(Material.LIGHT)))
-							&& !(sel.getType().toString().contains("candle")
-									&& sel.getType().toString().matches(".*(C|c)(A|a)(n|N)(D|d)(L|l)(e|E).*"))) {
+							&& !sel.getType().name().toLowerCase().contains("candle")) {
 						if (!(sel.getType().equals(Material.REDSTONE) || sel.getType().equals(Material.REDSTONE_TORCH)
 								|| sel.getType().equals(Material.TORCH))) {
 							Location l1 = sel.getLocation();
@@ -73,24 +72,23 @@ public class LightZone {
 		save();
 	}
 
-	public LightZone(String ident, String world, int on, int timeOn, int timeOff, ArrayList<Byte> lightLevels,
+	public LightZone(String id, String world, int on, int timeOn, int timeOff, ArrayList<Byte> lightLevels,
 			ArrayList<Integer[]> lightBlockLocations) {
-		this.fileName = TsLight.pluginDir + "/lightZone/" + world + "=" + ident + ".txt";
+		this.fileName = TsLight.getPluginDir() + "/lightZone/" + world + "=" + id + ".txt";
 		this.lightBlockLocations = lightBlockLocations;
 		this.defLightBlockLevel = lightLevels;
 		this.timeOn = timeOn;
 		this.timeOff = timeOff;
 		this.world = world;
 		this.on = on;
-		World w = Bukkit.getServer().getWorld(world);
+		World w = Objects.requireNonNull(Bukkit.getServer().getWorld(world), "world not found");
 		
 		for (int k=this.lightBlockLocations.size()-1;k>=0;k--) {
 			Integer[] v = this.lightBlockLocations.get(k);
 			Block sel = w.getBlockAt(v[0], v[1], v[2]);
-			if (!(sel != null
-					&& (sel.getBlockData() instanceof Lightable
+			if (!((sel.getBlockData() instanceof Lightable
 							|| sel.getType().isBlock() && sel.getType().equals(Material.LIGHT))
-					&& !(sel.getType().toString().contains("candle") && sel.getType().toString().contains("Candle")))) {
+					&& !sel.getType().name().toLowerCase().contains("candle"))) {
 				int ind = this.lightBlockLocations.indexOf(v);
 				this.lightBlockLocations.remove(ind);
 				this.defLightBlockLevel.remove(ind);
