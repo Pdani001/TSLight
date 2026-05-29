@@ -1,7 +1,7 @@
 name: TSLight
-main: com.mikemik44.light.TsLight
+main: com.mikemik44.light.TSLight
 version: ${project.version}
-api-version: 1.17
+api-version: 1.20.6
 author: TheServer.wtf
 website: 'https://TheServer.wtf/'
 description: A plugin that listens for the time and changes light zones or blocks accordingly
@@ -20,5 +20,5 @@ permissions:
 commands:
   tslight:
     aliases: [light]
-    usage: /<command> [args]
+    usage: /<command> [args...]
     description: The main command of TSLight

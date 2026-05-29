@@ -29,24 +29,19 @@ public enum Times {
 		return time;
 	}
 
-	public static Long convertFromTimeToDay(String timeOfDay) {
+	public static long convertFromTimeToDay(String timeOfDay) {
 		Times times = timesNamesMap.get(timeOfDay.toUpperCase());
 		if(times != null)
 			return times.getTime();
 		return -1L;
 	}
 
-	public static String convertToTimeOfDay(Long time) {
-		Times current = values()[0];
-		for(Times times : values()) {
-			if(current.getTime() < time) break;
-			if(time >= times.getTime()) current = times;
-		}
-		return current.toString();
+	public static long getWorldTime(World w) {
+		return w.getTime();
 	}
 
-	public static Long getWorldTime(World w) {
-		return w.getTime();
+	public static long normalize(long time){
+		return (time % 24000 + 24000) % 24000;
 	}
 
 	@Override
